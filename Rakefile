@@ -15,23 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-spec = Gem::Specification.new do |spec|
-  spec.name = 'amazon_myx'
-  spec.summary = 'Unofficial Ruby library for the undocumented "myx" Kindle JSON API'
-  spec.description = %{Aims to provide an interactive client, a low level API, and
-  a high level API. Completely unaffiliated with Amazon.}
-  spec.author = 'Browser Input'
-  spec.email = 'browserinput@users.noreply.github.com'
-  spec.homepage = 'http://www.example.com'
-  spec.licenses = ['GPL3']
-  spec.version = '0.0.0'
+require 'rake/rdoctask'
 
-  spec.files = ['LICENSE', 'LICENSE.md', 'README.md'] + Dir['lib/*.rb']
-  spec.require_paths = ['lib']
+Rake::RDocTask.new('rdoc') do |task|
+  task.rdoc_files.include 'README.md', 'lib/*.rb'
+  task.main = 'README.md'
+  task.title = 'amazon_myx API documentation'
 
-  spec.rdoc_options = ['--main', 'README.md']
-  spec.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
-
-  spec.add_dependency('nokogiri')
-  spec.add_dependency('mechanize')
+  t.rdoc_dir = 'doc/html'
 end
