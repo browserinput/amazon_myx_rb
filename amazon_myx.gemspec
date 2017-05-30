@@ -23,7 +23,7 @@ spec = Gem::Specification.new do |spec|
   spec.author = 'Browser Input'
   spec.email = 'browserinput@users.noreply.github.com'
   spec.homepage = 'http://www.example.com'
-  spec.licenses = ['GPL3']
+  spec.licenses = ['GPL-3.0']
   spec.version = '0.0.0'
 
   spec.files = ['LICENSE', 'LICENSE.md', 'README.md'] + Dir['lib/*.rb']
