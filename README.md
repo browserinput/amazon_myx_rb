@@ -19,3 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ```
 ![GPL v3 Logo](https://www.gnu.org/graphics/gplv3-88x31.png)
 ___
+
+This is a very young library. To test what's been done so far, use the following \*nix command after building and installing the gem:
+
+```bash
+AMAZONMYX_PASSWORD=YOUR_PASSWORD AMAZONMYX_EMAIL=YOUR_EMAIL amazon_myx
+```
+
+It currently lists out all Amazon devices connected to this account.

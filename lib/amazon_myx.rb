@@ -16,3 +16,4 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 require 'amazon_myx/client'
+require 'amazon_myx/objects'

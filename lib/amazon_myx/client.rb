@@ -15,80 +15,101 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-require 'nokogiri'
 require 'mechanize'
-require 'irb'
+require 'json'
 
-class Client
+require 'amazon_myx/objects'
+
+module AmazonMYX
   MYX_MATCH = /myx\.html/.freeze
   MYX_HTML = 'https://www.amazon.com/mn/dcw/myx.html/ref=nav_youraccount_myk'.freeze
   MYX_AJAX = 'https://www.amazon.com/mn/dcw/myx/ajax-activity/ref=myx_ajax'.freeze
   EMAIL_VALID_EXCLUDE = '[^ @]+'.freeze
   EMAIL_VALID = /^#{EMAIL_VALID_EXCLUDE}@#{EMAIL_VALID_EXCLUDE}\.#{EMAIL_VALID_EXCLUDE}$/.freeze
   CSRF_MATCH = /csrfToken\W+?=\W+?["'](.+?)["']/.freeze
-  attr_reader :email, :agent, :csrfToken
 
-  def initialize(email='', password='')
-    raise ArgumentError, "not a valid e-mail address: #{email}" unless Client.is_email? email
-    @email = email.freeze
-    raise ArgumentError, "password is not a String: #{password}" unless password.is_a? String
-    @password = password.freeze
-    self.setup_agent
-    nil
-  end
+  class Client
+    attr_reader :email, :agent, :csrfToken
 
-  def setup_agent(force_new_agent=false)
-    raise '@agent already exists!' if self.agent and not force_new_agent
-    @agent = Mechanize.new {|agent|
-      agent.cookie_jar.clear!
-      agent.user_agent_alias = 'Linux Firefox'
-      agent.follow_meta_refresh = true
-      agent.redirect_ok = true
-    }
-    nil
-  end
-
-  def raw_login()
-    page = @agent.get MYX_HTML
-    signin_f = page.form('signIn')
-    signin_f.email = self.email
-    signin_f.password = @password
-    page = @agent.submit signin_f
-    raise 'Login error: ' + page.uri.to_s unless page.uri.to_s =~ MYX_MATCH
-    self.get_csrfToken(page.body)
-    page
-    nil
-  end
-
-  def logged_in?()
-    ((@agent.get MYX_HTML).uri.to_s =~ MYX_MATCH) ? true : false
-  end
-
-  def json_query(data)
-    self.agent.post MYX_AJAX, { 'data' => data, 'csrfToken' => self.csrfToken }, {
-      'Accept' => 'Accept: application/json, text/plain, */*',
-      'client' => 'MYX',
-      'Referer' => MYX_HTML,
-      'DNT' => 1,
-      'Connection' => 'keep-alive'}
-  end
-
-  def get_devices()
-    (json_query '{"param":{"GetDevices":{}}}').body
-  end
-
-  def get_csrfToken(page_body='')
-    if page_body.empty? then
-      page_body = (@agent.get MYX_HTML).body
+    def initialize(email='', password='')
+      raise ArgumentError, "not a valid e-mail address: #{email}" unless Client.is_email? email
+      @email = email.freeze
+      raise ArgumentError, "password is not a String: #{password}" unless password.is_a? String
+      @password = password.freeze
+      self.setup_agent
+      nil
     end
-    matcher = page_body.match CSRF_MATCH
-    raise "Something is wrong; myx.html didn't contain a csrfToken!" unless matcher
-    @csrfToken = matcher[1].freeze
-  end
 
-  def Client.is_email?(email)
-    raise ArgumentError, "email is not a String: #{email}" unless email.is_a? String
-    (email =~ EMAIL_VALID) ? true : false
+    def setup_agent(force_new_agent=false)
+      raise '@agent already exists!' if self.agent and not force_new_agent
+      @agent = Mechanize.new {|agent|
+        agent.cookie_jar.clear!
+        agent.user_agent_alias = 'Linux Firefox'
+        agent.follow_meta_refresh = true
+        agent.redirect_ok = true
+      }
+      nil
+    end
+
+    def raw_login()
+      page = @agent.get MYX_HTML
+      signin_f = page.form('signIn')
+      signin_f.email = self.email
+      signin_f.password = @password
+      page = @agent.submit signin_f
+      raise RuntimeError, 'Login error: ' + page.uri.to_s unless page.uri.to_s =~ MYX_MATCH
+      self.get_csrfToken(page.body)
+      page
+      nil
+    end
+
+    def login()
+      5.times { |count|
+        begin
+          self.raw_login
+          return
+        rescue RuntimeError => e
+          STDERR.puts "Login failed #{count+1} times"
+        end
+        sleep 0.5
+      }
+      raise RuntimeError, 'Login failed!'
+    end
+
+    def logged_in?()
+      ((@agent.get MYX_HTML).uri.to_s =~ MYX_MATCH) ? true : false
+    end
+
+    def json_query(data)
+      self.agent.post MYX_AJAX, { 'data' => data, 'csrfToken' => self.csrfToken }, {
+        'Accept' => 'Accept: application/json, text/plain, */*',
+        'client' => 'MYX',
+        'Referer' => MYX_HTML,
+        'DNT' => 1,
+        'Connection' => 'keep-alive'}
+    end
+
+    def get_devices()
+      devices_hash = JSON.parse((json_query '{"param":{"GetDevices":{}}}').body)
+      raise devices_hash['error'] if (devices_hash['success'] and not devices_hash['success'])
+      devices_hash['GetDevices']['devices'].map {|x|
+        AmazonMYX::Device.new(x)
+      }
+    end
+
+    def get_csrfToken(page_body='')
+      if page_body.empty? then
+        page_body = (@agent.get MYX_HTML).body
+      end
+      matcher = page_body.match CSRF_MATCH
+      raise "Something is wrong; myx.html didn't contain a csrfToken!" unless matcher
+      @csrfToken = matcher[1].freeze
+    end
+
+    def Client.is_email?(email)
+      raise ArgumentError, "email is not a String: #{email}" unless email.is_a? String
+      (email =~ EMAIL_VALID) ? true : false
+    end
   end
 end
 
