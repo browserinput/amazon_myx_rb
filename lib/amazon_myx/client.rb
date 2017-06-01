@@ -18,9 +18,8 @@
 require 'mechanize'
 require 'json'
 
-require 'amazon_myx/objects'
-
 module AmazonMYX
+  AMAZON = 'https://www.amazon.com/'.freeze
   MYX_MATCH = /myx\.html/.freeze
   MYX_HTML = 'https://www.amazon.com/mn/dcw/myx.html/ref=nav_youraccount_myk'.freeze
   MYX_AJAX = 'https://www.amazon.com/mn/dcw/myx/ajax-activity/ref=myx_ajax'.freeze
@@ -48,6 +47,7 @@ module AmazonMYX
         agent.follow_meta_refresh = true
         agent.redirect_ok = true
       }
+      @agent.get AMAZON
       nil
     end
 
@@ -89,14 +89,6 @@ module AmazonMYX
         'Connection' => 'keep-alive'}
     end
 
-    def get_devices()
-      devices_hash = JSON.parse((json_query '{"param":{"GetDevices":{}}}').body)
-      raise devices_hash['error'] if (devices_hash['success'] and not devices_hash['success'])
-      devices_hash['GetDevices']['devices'].map {|x|
-        AmazonMYX::Device.new(x)
-      }
-    end
-
     def get_csrfToken(page_body='')
       if page_body.empty? then
         page_body = (@agent.get MYX_HTML).body
@@ -112,5 +104,3 @@ module AmazonMYX
     end
   end
 end
-
-#agent.post 'https://www.amazon.com/mn/dcw/myx/ajax-activity/ref=myx_ajax', '{"param":{"GetDevices":{}}}&csrfToken=gPH04XVy7SUe1E1wettmaPxLni91+RALZ5zRIC4AAAAJAAAAAFktwDZyYXcAAAAA', 'Accept' => 'Accept: application/json, text/plain, */*', 'client' => 'MYX', 'Referer' => 'https://www.amazon.com/mn/dcw/myx.html/ref=nav_youraccount_myk', 'DNT' => 1, 'Connection' => 'keep-alive'

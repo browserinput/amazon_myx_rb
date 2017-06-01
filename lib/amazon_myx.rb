@@ -15,5 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+module AmazonMYX
+end
+
 require 'amazon_myx/client'
-require 'amazon_myx/objects'
+require 'amazon_myx/device'
+require 'amazon_myx/purchase'

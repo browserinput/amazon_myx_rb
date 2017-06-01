@@ -1,4 +1,4 @@
-### amazon_myx - Unofficial Ruby library for the undocumented "myx" Kindle JSON API
+### amazon_myx_rb - Unofficial Ruby library for the undocumented "myx" Kindle JSON API
 ___
 >Aims to provide an interactive client, a low level API, and a high level API. Completely unaffiliated with Amazon.
 ```
